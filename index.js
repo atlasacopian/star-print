@@ -10,16 +10,21 @@ const queueFile = path.join(__dirname, "jobQueue.json");
 
 app.use(express.json());
 
-// Respond to both GET and POST from printer
+// Log requests and serve print jobs to printer
 app.all("/", (req, res) => {
+  console.log("📬 Printer requested job");
+
   const jobs = JSON.parse(fs.readFileSync(queueFile));
 
   if (jobs.length === 0) {
+    console.log("❌ No jobs available");
     return res.json({ jobReady: false });
   }
 
   const job = jobs.shift();
   fs.writeFileSync(queueFile, JSON.stringify(jobs, null, 2));
+
+  console.log("✅ Sending job to printer");
 
   res.set("Content-Type", "application/json");
   res.json({
@@ -51,9 +56,10 @@ app.post("/add", (req, res) => {
   jobs.push({ data: base64Data });
   fs.writeFileSync(queueFile, JSON.stringify(jobs, null, 2));
 
+  console.log(`🆕 Job added: ${message}`);
   res.json({ status: "Job added" });
 });
 
 app.listen(port, () => {
-  console.log(`Star Print SDK server running on port ${port}`);
+  console.log(`🚀 Star Print SDK server running on port ${port}`);
 });

@@ -6,33 +6,37 @@ const port = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// Respond to CloudPRNT polling with a verified working print job
+// Respond with fully structured CloudPRNT job format
 app.all("/", (req, res) => {
   console.log("📬 Printer requested job");
 
-  // ESC @ (init), "HELLO ATLAS\n", ESC d 3 (feed), ESC i (cut)
   const commands = Buffer.concat([
-    Buffer.from([0x1b, 0x40]), // Initialize
+    Buffer.from([0x1b, 0x40]), // ESC @ (init)
     Buffer.from("HELLO ATLAS\n", "ascii"),
-    Buffer.from([0x1b, 0x64, 0x03]), // Feed 3 lines
-    Buffer.from([0x1b, 0x69]) // Full cut
+    Buffer.from([0x1b, 0x64, 0x03]), // ESC d 3 (feed)
+    Buffer.from([0x1b, 0x69]) // ESC i (cut)
   ]);
 
   const base64Data = commands.toString("base64");
 
-  res.set("Content-Type", "application/json");
-  res.json({
+  const jobResponse = {
     jobReady: true,
+    jobToken: "job-001", // optional but included for completeness
     mediaTypes: ["receipt"],
     job: {
       format: "starprnt",
+      formatVersion: "1.0",
+      jobName: "Print Hello Atlas",
       data: base64Data
     }
-  });
+  };
 
-  console.log("✅ Sent CloudPRNT-format job to printer");
+  res.set("Content-Type", "application/json");
+  res.status(200).json(jobResponse);
+
+  console.log("✅ Sent full CloudPRNT-format job");
 });
 
 app.listen(port, () => {
-  console.log(`🚀 Star Print CloudPRNT server running on port ${port}`);
+  console.log(`🚀 Star Print CloudPRNT+JSON server running on port ${port}`);
 });

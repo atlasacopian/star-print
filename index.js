@@ -10,9 +10,11 @@ const queueFile = path.join(__dirname, "jobQueue.json");
 
 app.use(express.json());
 
-// Log requests and serve print jobs to printer
+// Respond to both GET and POST from printer
 app.all("/", (req, res) => {
   console.log("📬 Printer requested job");
+  console.log("Headers:", req.headers);
+  console.log("Query:", req.query);
 
   const jobs = JSON.parse(fs.readFileSync(queueFile));
 

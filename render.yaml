@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: star-print
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
+    plan: free
+    autoDeploy: true
+    envVars: []

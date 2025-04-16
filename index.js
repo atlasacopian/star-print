@@ -10,8 +10,8 @@ const queueFile = path.join(__dirname, "jobQueue.json");
 
 app.use(express.json());
 
-// Serve next print job in proper CloudPRNT format
-app.get("/", (req, res) => {
+// Respond to both GET and POST from printer
+app.all("/", (req, res) => {
   const jobs = JSON.parse(fs.readFileSync(queueFile));
 
   if (jobs.length === 0) {

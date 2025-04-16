@@ -10,7 +10,7 @@ const queueFile = path.join(__dirname, "jobQueue.json");
 
 app.use(express.json());
 
-// Serve the next available print job
+// Serve next print job in proper CloudPRNT format
 app.get("/", (req, res) => {
   const jobs = JSON.parse(fs.readFileSync(queueFile));
 
@@ -21,6 +21,7 @@ app.get("/", (req, res) => {
   const job = jobs.shift();
   fs.writeFileSync(queueFile, JSON.stringify(jobs, null, 2));
 
+  res.set("Content-Type", "application/json");
   res.json({
     jobReady: true,
     mediaTypes: ["receipt"],
@@ -37,13 +38,17 @@ app.post("/add", (req, res) => {
 
   if (!message) return res.status(400).json({ error: "Missing message" });
 
-  const job = Buffer.from(
-    `\x1b@${message}\n\x1b\x64\x02\x1b\x69`,
-    "binary"
-  ).toString("base64");
+  const commands = Buffer.from([
+    0x1b, 0x40, // Initialize
+    ...Buffer.from(message + "\n"),
+    0x1b, 0x64, 0x02, // Feed 2 lines
+    0x1b, 0x69 // Full cut
+  ]);
+
+  const base64Data = commands.toString("base64");
 
   const jobs = JSON.parse(fs.readFileSync(queueFile));
-  jobs.push({ data: job });
+  jobs.push({ data: base64Data });
   fs.writeFileSync(queueFile, JSON.stringify(jobs, null, 2));
 
   res.json({ status: "Job added" });

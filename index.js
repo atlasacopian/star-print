@@ -1,15 +1,24 @@
+// index.js
+
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// Serve a known-good hardcoded job
+// Respond to CloudPRNT polling with a verified working print job
 app.all("/", (req, res) => {
   console.log("📬 Printer requested job");
 
   // ESC @ (init), "HELLO ATLAS\n", ESC d 3 (feed), ESC i (cut)
-  const base64Data = "G0AESEVMTE8gQVRMQVMKGrs=";
+  const commands = Buffer.concat([
+    Buffer.from([0x1b, 0x40]), // Initialize
+    Buffer.from("HELLO ATLAS\n", "ascii"),
+    Buffer.from([0x1b, 0x64, 0x03]), // Feed 3 lines
+    Buffer.from([0x1b, 0x69]) // Full cut
+  ]);
+
+  const base64Data = commands.toString("base64");
 
   res.set("Content-Type", "application/json");
   res.json({
@@ -21,9 +30,9 @@ app.all("/", (req, res) => {
     }
   });
 
-  console.log("✅ Sent hardcoded test job");
+  console.log("✅ Sent CloudPRNT-format job to printer");
 });
 
 app.listen(port, () => {
-  console.log(`🚀 Star Print SDK server running on port ${port}`);
+  console.log(`🚀 Star Print CloudPRNT server running on port ${port}`);
 });
